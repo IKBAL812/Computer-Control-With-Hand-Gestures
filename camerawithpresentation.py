@@ -30,12 +30,16 @@ latest_predictions = []
 
 # Variables to track button click
 button_clicked = False # Quit button
+buttonPressed = False  # Presentation control
+buttonCounter = 0
+buttonDelay = 20
 
 # Function to draw the GUI
 def draw_gui(frame):
     # Draw a rectangle for the Quit button
     cv2.rectangle(frame, (530, 410), (620, 460), (0, 0, 255), -1)
     cv2.putText(frame, "Quit", (545, 445), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
 
 # Mouse callback function
 def mouse_callback(event, x, y, flags, param):
@@ -53,10 +57,22 @@ cap.set(4, 720) # Camera height
 cv2.namedWindow('Hand Sign Prediction')
 cv2.setMouseCallback('Hand Sign Prediction', mouse_callback)
 
+# Get the list of presentation images
+folderPath = 'Presentation'
+pathImages = sorted(os.listdir(folderPath), key=len)
+
 #Variables
+imgNumber = 0 # for presentation
 gestureThreshold = 300 # for the line
 
+
 while True:
+    # Import the images
+    pathFullImage = os.path.join(folderPath, pathImages[imgNumber])
+    imgCurrent = cv2.imread(pathFullImage)
+    imgCurrent = cv2.resize(imgCurrent, (1080, 720))
+    cv2.imshow('Presentation', imgCurrent)
+
     # Webcam
     ret, frame = cap.read()
     frame = cv2.flip(frame, 1)
@@ -66,9 +82,10 @@ while True:
 
     cv2.line(frame, (0, gestureThreshold), (720, gestureThreshold), (0, 0, 255), 2)
 
+
     # Detect and crop the hand
     results = hands.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-    if results.multi_hand_landmarks :
+    if results.multi_hand_landmarks and buttonPressed is False:
         for hand_landmarks in results.multi_hand_landmarks:
             # Draw hand landmarks on the frame
             mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
@@ -97,6 +114,24 @@ while True:
                         latest_predictions.append((hand_sign, confidence))
                         if len(latest_predictions) > 3:
                             latest_predictions.pop(0)
+
+                # Presentation controls with the signs
+                    if hand_sign == "A" and confidence > 0.8:
+                        if imgNumber < len(pathImages) - 1:
+                            imgNumber += 1
+                            buttonPressed = True
+
+                    if hand_sign == "I" and confidence > 0.8:
+                        if imgNumber > 0:
+                            imgNumber -= 1
+                            buttonPressed = True
+
+    # Button pressed iteration for presentation
+    if buttonPressed:
+        buttonCounter += 1
+        if buttonCounter > buttonDelay:
+            buttonCounter = 0
+            buttonPressed = False
 
     # Display the latest 3 predictions on the frame
     y_position = 30
