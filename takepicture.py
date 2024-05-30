@@ -15,13 +15,17 @@ class Application(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Camera Application")
-        self.geometry("1000x950")  # Increased window size
+        self.geometry("1000x1000")  # Increased window size
+
+        self.is_running = False  # To control the start/stop state
 
         # Box 1: Camera feed
         self.camera_frame = tk.Frame(self, width=400, height=300)
         self.camera_frame.grid(row=0, column=0, padx=10, pady=10)
         self.camera_label = Label(self.camera_frame)
         self.camera_label.pack()
+        self.start_stop_button = Button(self.camera_frame, text="Start", command=self.toggle_camera)
+        self.start_stop_button.pack()
 
         # Box 2: Picture, filename and countdown
         self.picture_frame = tk.Frame(self, width=400, height=300)
@@ -64,7 +68,6 @@ class Application(tk.Tk):
 
         # Start the update loop
         self.update_camera()
-        self.update_counter()
 
         # Quit button
         self.quit_button = Button(self, text="Quit", command=self.on_closing)
@@ -89,20 +92,23 @@ class Application(tk.Tk):
             self.camera_label.imgtk = imgtk
             self.camera_label.configure(image=imgtk)
 
-        self.after(10, self.update_camera)
+        if self.is_running:
+            self.after(10, self.update_camera)
 
     def update_counter(self):
-        self.counter -= 1
-        if self.counter == 0:
-            self.take_picture()
-            self.counter = 2
+        if self.is_running:
+            self.counter -= 1
+            if self.counter == 0:
+                self.take_picture()
+                self.counter = 2
 
-        self.counter_label.config(text=f"Next photo in: {self.counter} seconds")
-        self.after(1000, self.update_counter)
+            self.counter_label.config(text=f"Next photo in: {self.counter} seconds")
+            self.after(1000, self.update_counter)
 
     def take_picture(self):
         ret, frame = self.cap.read()
         if ret:
+            frame = cv2.flip(frame, 1)  # Mirror the frame horizontally
             filename = f"{time.strftime('%Y%m%d-%H%M%S')}.png"
             filepath = os.path.join(capture_folder, filename)
             cv2.imwrite(filepath, frame)
@@ -119,6 +125,16 @@ class Application(tk.Tk):
 
         filename_label = Label(self.scrollable_frame, text=os.path.basename(filepath))
         filename_label.pack()
+
+    def toggle_camera(self):
+        if self.is_running:
+            self.is_running = False
+            self.start_stop_button.config(text="Start")
+        else:
+            self.is_running = True
+            self.start_stop_button.config(text="Stop")
+            self.update_camera()
+            self.update_counter()
 
     def on_closing(self):
         self.cap.release()
