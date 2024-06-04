@@ -18,7 +18,7 @@ class CameraApp:
     def __init__(self, root, image_path):
         self.root = root
         self.root.title("Control with Gestures App")
-        self.root.geometry("1280x720")
+        self.root.geometry("1320x750")
 
         # Load the trained model
         self.model, self.label_map, self.reverse_label_map = self.load_model_and_labels()
@@ -90,11 +90,11 @@ class CameraApp:
         self.prediction_frames = []
         for i in range(3):
             frame = tk.Frame(bottom_image_frame, width=213, height=360)
-            frame.pack(side="left", padx=5, pady=5)
+            text_label = tk.Label(frame, text="", fg="gray33", font=("Helvetica", 20), pady=5)
+            text_label.pack()
+            frame.pack(side="right", padx=20, pady=5)
             image_label = tk.Label(frame)
             image_label.pack()
-            text_label = tk.Label(frame, text="", bg="white", font=("Helvetica", 16))
-            text_label.pack()
             self.prediction_frames.append((image_label, text_label))
 
         # Right frame
@@ -149,37 +149,110 @@ class CameraApp:
 
                 if confidence > 0.8:
                     match hand_sign:
-                        case "1":
-                            self.volume_shut()
-                            self.latest_predictions.append((cropped_hand, "volume shut", confidence))
+                        case "MUTE":
+                            self.mute()
+                            self.latest_predictions.append((cropped_hand, "Mute", confidence))
                             if len(self.latest_predictions) > 3:
                                 self.latest_predictions.pop(0)
                             self.display_latest_predictions()
                             self.buttonPressed = True
 
-                        case "2":
-                            self.volume_open()
-                            self.latest_predictions.append((cropped_hand, "volume open", confidence))
+                        case "UNMUTE":
+                            self.unmute()
+                            self.latest_predictions.append((cropped_hand, "Unmute", confidence))
                             if len(self.latest_predictions) > 3:
                                 self.latest_predictions.pop(0)
                             self.display_latest_predictions()
                             self.buttonPressed = True
+
+                        case "BRIGHTNESS_DOWN":
+                            self.brightness_down()
+                            self.latest_predictions.append((cropped_hand, "Brightness Down", confidence))
+                            if len(self.latest_predictions) > 3:
+                                self.latest_predictions.pop(0)
+                            self.display_latest_predictions()
+                            self.buttonPressed = True
+
+                        case "BRIGHTNESS_UP":
+                            self.brightness_up()
+                            self.latest_predictions.append((cropped_hand, "Brightness Up", confidence))
+                            if len(self.latest_predictions) > 3:
+                                self.latest_predictions.pop(0)
+                            self.display_latest_predictions()
+                            self.buttonPressed = True
+
+                        case "DESKTOP":
+                            self.desktop()
+                            self.latest_predictions.append((cropped_hand, "Desktop", confidence))
+                            if len(self.latest_predictions) > 3:
+                                self.latest_predictions.pop(0)
+                            self.display_latest_predictions()
+                            self.buttonPressed = True
+
+                        case "FULLSCREEN":
+                            self.fullscreen()
+                            self.latest_predictions.append((cropped_hand, "Fullscreen", confidence))
+                            if len(self.latest_predictions) > 3:
+                                self.latest_predictions.pop(0)
+                            self.display_latest_predictions()
+                            self.buttonPressed = True
+
+                        case "NEXT_SLIDE":
+                            self.next_slide()
+                            self.latest_predictions.append((cropped_hand, "Next Slide", confidence))
+                            if len(self.latest_predictions) > 3:
+                                self.latest_predictions.pop(0)
+                            self.display_latest_predictions()
+                            self.buttonPressed = True
+
+                        case "PREVIOUS_SLIDE":
+                            self.previous_slide()
+                            self.latest_predictions.append((cropped_hand, "Previous Slide", confidence))
+                            if len(self.latest_predictions) > 3:
+                                self.latest_predictions.pop(0)
+                            self.display_latest_predictions()
+                            self.buttonPressed = True
+
+                        case "PAUSE_UNPAUSE":
+                            self.pause_unpause()
+                            self.latest_predictions.append((cropped_hand, "Pause Unpause", confidence))
+                            if len(self.latest_predictions) > 3:
+                                self.latest_predictions.pop(0)
+                            self.display_latest_predictions()
+                            self.buttonPressed = True
+
+                        case "VOLUME_UP":
+                            self.volume_up()
+                            self.latest_predictions.append((cropped_hand, "Volume Up", confidence))
+                            if len(self.latest_predictions) > 3:
+                                self.latest_predictions.pop(0)
+                            self.display_latest_predictions()
+                            self.buttonPressed = True
+
+                        case "VOLUME_DOWN":
+                            self.volume_down()
+                            self.latest_predictions.append((cropped_hand, "Volume Down", confidence))
+                            if len(self.latest_predictions) > 3:
+                                self.latest_predictions.pop(0)
+                            self.display_latest_predictions()
+                            self.buttonPressed = True
+
 
     # Displays the latest three predictions on the GUI.
     def display_latest_predictions(self):
         for i, (image_label, text_label) in enumerate(self.prediction_frames):
             if i < len(self.latest_predictions):
                 cropped_hand, hand_sign, _ = self.latest_predictions[i]
-                img = cv2.resize(cropped_hand, (200, 200))
+                img = cv2.resize(cropped_hand, (150,150))
                 img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
                 imgtk = ImageTk.PhotoImage(image=img)
 
                 image_label.imgtk = imgtk
                 image_label.config(image=imgtk)
-                #text_label.config(text=hand_sign)
+                text_label.config(text=hand_sign)
             else:
                 image_label.config(image="")
-                #text_label.config(text="")
+                text_label.config(text="")
 
     # Captures frames from the camera, processes them, and updates the GUI.
     def update_camera(self):
@@ -199,20 +272,10 @@ class CameraApp:
                     self.buttonCounter = 0
                     self.buttonPressed = False
 
-            self.display_predictions(frame)
             self.draw_threshold_line(frame)
             self.update_image_label(self.camera_label, frame)
 
         self.root.after(10, self.update_camera)
-
-    # Displays text predictions on the camera frame.
-    def display_predictions(self, frame):
-        x_position = 15
-        y_position = 475
-        for _, command, confidence in reversed(self.latest_predictions):
-            cv2.putText(frame, f"{command} ", (x_position, y_position),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
-            x_position += 225
 
     # Draws a threshold line on the camera frame.
     def draw_threshold_line(self, frame):
@@ -225,15 +288,14 @@ class CameraApp:
         label.imgtk = imgtk
         label.config(image=imgtk)
 
-
     # COMMAND FUNCTIONS
-    def volume_shut(self):
+    def mute(self):
         devices = AudioUtilities.GetSpeakers()
         interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
         volume = cast(interface, POINTER(IAudioEndpointVolume))
         volume.SetMute(1, None)
 
-    def volume_open(self):
+    def unmute(self):
         devices = AudioUtilities.GetSpeakers()
         interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
         volume = cast(interface, POINTER(IAudioEndpointVolume))
@@ -267,18 +329,20 @@ class CameraApp:
         subprocess.run(["powershell",
                         f"(Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightnessMethods).WmiSetBrightness(1,{new_brightness})"])
 
-    def lock_pc(self):
-        ctypes.windll.user32.LockWorkStation()
+    def desktop(self):
+        pyautogui.hotkey('winleft', 'd')
 
-    def play_pause_media(self):
+    def pause_unpause(self):
         pyautogui.press("playpause")
 
-    def presentation_next(self):
+    def next_slide(self):
         pyautogui.press("right")
 
-    def presentation_before(self):
+    def previous_slide(self):
         pyautogui.press("left")
 
+    def fullscreen(self):
+        pyautogui.hotkey('win', 'up')
 
     # Handles the closing of the application.
     def on_closing(self):
