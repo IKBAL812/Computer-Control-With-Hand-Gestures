@@ -50,7 +50,7 @@ def parlaklik_azalt():
                     f"(Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightnessMethods).WmiSetBrightness(1,{new_brightness})"])
 
 def bilgisayari_kilitle():
-    ctypes.windll.user32.LockWorkStation()
+    pyautogui.hotkey('winleft', 'd')
 
 def muzik_video_oynat_durdur():
     pyautogui.press("playpause")
@@ -69,7 +69,7 @@ def main():
         print("4. Sesi Azalt, her tıklamada %10")
         print("5. Ekran Parlaklığını Artır, her tıklamada %10")
         print("6. Ekran Parlaklığını Azalt, her tıklamada %10")
-        print("7. Bilgisayarı Kilitle")
+        print("7. Ana Ekrana Dön")
         print("8. Müzik/Video Oynat-Durdur")
         print("9. Slayt İleri")
         print("10. Slayt Geri")

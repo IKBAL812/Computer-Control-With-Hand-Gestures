@@ -1,15 +1,9 @@
 import tkinter as tk
-from tkinter import Label, PhotoImage, Scrollbar, Canvas, Frame, Button
+from tkinter import Label, PhotoImage, Scrollbar, Canvas, Frame, Button, Entry
 import cv2
 import os
 from PIL import Image, ImageTk
 import time
-
-# Set up directories
-capture_folder = r'C:\PythonProject\HandImages\deneme'
-if not os.path.exists(capture_folder):
-    os.makedirs(capture_folder)
-
 
 class Application(tk.Tk):
     def __init__(self):
@@ -18,10 +12,17 @@ class Application(tk.Tk):
         self.geometry("1000x1000")  # Increased window size
 
         self.is_running = False  # To control the start/stop state
+        self.picture_count = 0  # Counter for the number of pictures taken
+
+        # Directory input
+        self.dir_label = Label(self, text="Enter directory name:")
+        self.dir_label.grid(row=0, column=0, padx=10, pady=10)
+        self.dir_entry = Entry(self)
+        self.dir_entry.grid(row=0, column=1, padx=10, pady=10)
 
         # Box 1: Camera feed
         self.camera_frame = tk.Frame(self, width=400, height=300)
-        self.camera_frame.grid(row=0, column=0, padx=10, pady=10)
+        self.camera_frame.grid(row=1, column=0, padx=10, pady=10)
         self.camera_label = Label(self.camera_frame)
         self.camera_label.pack()
         self.start_stop_button = Button(self.camera_frame, text="Start", command=self.toggle_camera)
@@ -29,17 +30,19 @@ class Application(tk.Tk):
 
         # Box 2: Picture, filename and countdown
         self.picture_frame = tk.Frame(self, width=400, height=300)
-        self.picture_frame.grid(row=1, column=0, padx=10, pady=10)
+        self.picture_frame.grid(row=2, column=0, padx=10, pady=10)
         self.picture_label = Label(self.picture_frame)
         self.picture_label.pack()
-        self.file_name_label = Label(self.picture_frame, text="Filename: Deneme")
+        self.file_name_label = Label(self.picture_frame, text="Filename: ")
         self.file_name_label.pack()
         self.counter_label = Label(self.picture_frame)
         self.counter_label.pack()
+        self.picture_count_label = Label(self.picture_frame, text=f"Pictures taken: {self.picture_count}")
+        self.picture_count_label.pack()
 
         # Box 3: Captured images list (using all remaining space)
         self.images_frame = tk.Frame(self, width=800, height=1200)
-        self.images_frame.grid(row=0, column=1, rowspan=2, padx=10, pady=10, sticky="nsew")
+        self.images_frame.grid(row=1, column=1, rowspan=2, padx=10, pady=10, sticky="nsew")
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(1, weight=1)
 
@@ -64,17 +67,14 @@ class Application(tk.Tk):
 
         # Camera setup
         self.cap = cv2.VideoCapture(0)
-        self.counter = 2
-
-        # Start the update loop
-        self.update_camera()
+        self.counter = 1
 
         # Quit button
         self.quit_button = Button(self, text="Quit", command=self.on_closing)
-        self.quit_button.grid(row=2, column=1, padx=10, pady=10, sticky="e")
+        self.quit_button.grid(row=0, column=2, padx=10, pady=10)
 
     def load_initial_picture(self):
-        image_path = r"C:\PythonProject\HandImages\5\image_1681396325.934546.jpg"  # Path to the predefined picture
+        image_path = r"C:\PythonProject\HandImages\NEXT_SLIDE\image_1681478525.2627752.jpg"  # Path to the predefined picture
         image = Image.open(image_path)
         image = image.resize((400, 300), Image.Resampling.LANCZOS)
         photo = ImageTk.PhotoImage(image)
@@ -100,7 +100,7 @@ class Application(tk.Tk):
             self.counter -= 1
             if self.counter == 0:
                 self.take_picture()
-                self.counter = 2
+                self.counter = 1
 
             self.counter_label.config(text=f"Next photo in: {self.counter} seconds")
             self.after(1000, self.update_counter)
@@ -109,10 +109,18 @@ class Application(tk.Tk):
         ret, frame = self.cap.read()
         if ret:
             frame = cv2.flip(frame, 1)  # Mirror the frame horizontally
+            directory = self.dir_entry.get() or 'default'
+            capture_folder = os.path.join(r'C:\PythonProject\HandImages', directory)
+            if not os.path.exists(capture_folder):
+                os.makedirs(capture_folder)
             filename = f"{time.strftime('%Y%m%d-%H%M%S')}.png"
             filepath = os.path.join(capture_folder, filename)
             cv2.imwrite(filepath, frame)
             self.display_captured_image(filepath)
+
+            # Update picture count
+            self.picture_count += 1
+            self.picture_count_label.config(text=f"Pictures taken: {self.picture_count}")
 
     def display_captured_image(self, filepath):
         image = Image.open(filepath)
@@ -121,10 +129,10 @@ class Application(tk.Tk):
 
         image_label = Label(self.scrollable_frame, image=photo)
         image_label.image = photo  # Keep a reference to avoid garbage collection
-        image_label.pack()
+        image_label.pack(side=tk.TOP, pady=5)
 
         filename_label = Label(self.scrollable_frame, text=os.path.basename(filepath))
-        filename_label.pack()
+        filename_label.pack(side=tk.TOP, pady=5)
 
     def toggle_camera(self):
         if self.is_running:

@@ -24,14 +24,14 @@ print("Starting training...")
 # Build the model
 model = Sequential([
     Input(shape=(128, 128, 3)),
-    Conv2D(32, (3, 3), activation='relu', kernel_regularizer=l2(0.01)),
+    Conv2D(32, (3, 3), activation='relu'),
     MaxPooling2D((2, 2)),
-    Conv2D(64, (3, 3), activation='relu', kernel_regularizer=l2(0.01)),
+    Conv2D(64, (3, 3), activation='relu'),
     MaxPooling2D((2, 2)),
-    Conv2D(128, (3, 3), activation='relu', kernel_regularizer=l2(0.01)),
+    Conv2D(128, (3, 3), activation='relu'),
     MaxPooling2D((2, 2)),
     Flatten(),
-    Dense(128, activation='relu', kernel_regularizer=l2(0.01)),
+    Dense(128, activation='relu'),
     Dropout(0.5),
     Dense(len(label_map), activation='softmax')
 ])
@@ -39,6 +39,6 @@ model = Sequential([
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 # Train the model
-model.fit(X_train, y_train, epochs=100, validation_data=(X_test, y_test))
+model.fit(X_train, y_train, epochs=20, validation_data=(X_test, y_test))
 model.save('hand_sign_model.h5')
 print("Train complete!")
