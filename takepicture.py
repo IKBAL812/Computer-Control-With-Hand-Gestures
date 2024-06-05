@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import Label, PhotoImage, Scrollbar, Canvas, Frame, Button, Entry
+from tkinter import Label, Scrollbar, Canvas, Frame, Button, Entry
 import cv2
 import os
 from PIL import Image, ImageTk
@@ -28,11 +28,9 @@ class Application(tk.Tk):
         self.start_stop_button = Button(self.camera_frame, text="Start", command=self.toggle_camera)
         self.start_stop_button.pack()
 
-        # Box 2: Picture, filename and countdown
+        # Box 2: Picture counter and countdown
         self.picture_frame = tk.Frame(self, width=400, height=300)
         self.picture_frame.grid(row=2, column=0, padx=10, pady=10)
-        self.picture_label = Label(self.picture_frame)
-        self.picture_label.pack()
         self.file_name_label = Label(self.picture_frame, text="Filename: ")
         self.file_name_label.pack()
         self.counter_label = Label(self.picture_frame)
@@ -62,9 +60,6 @@ class Application(tk.Tk):
         )
         self.images_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
 
-        # Load initial picture
-        self.load_initial_picture()
-
         # Camera setup
         self.cap = cv2.VideoCapture(0)
         self.counter = 1
@@ -73,14 +68,7 @@ class Application(tk.Tk):
         self.quit_button = Button(self, text="Quit", command=self.on_closing)
         self.quit_button.grid(row=0, column=2, padx=10, pady=10)
 
-    def load_initial_picture(self):
-        image_path = r"C:\PythonProject\HandImages\NEXT_SLIDE\image_1681478525.2627752.jpg"  # Path to the predefined picture
-        image = Image.open(image_path)
-        image = image.resize((400, 300), Image.Resampling.LANCZOS)
-        photo = ImageTk.PhotoImage(image)
-        self.picture_label.config(image=photo)
-        self.picture_label.image = photo
-        self.file_name_label.config(text=f"Filename: {image_path}")
+        self.image_list = []  # List to keep track of image labels
 
     def update_camera(self):
         ret, frame = self.cap.read()
@@ -127,12 +115,19 @@ class Application(tk.Tk):
         image = image.resize((200, 150), Image.Resampling.LANCZOS)
         photo = ImageTk.PhotoImage(image)
 
+        # Insert image and label at the top of the frame
         image_label = Label(self.scrollable_frame, image=photo)
         image_label.image = photo  # Keep a reference to avoid garbage collection
-        image_label.pack(side=tk.TOP, pady=5)
-
         filename_label = Label(self.scrollable_frame, text=os.path.basename(filepath))
-        filename_label.pack(side=tk.TOP, pady=5)
+
+        # Add new image and filename label at the top of the list
+        for widget in self.image_list:
+            widget.grid_forget()
+        self.image_list.insert(0, image_label)
+        self.image_list.insert(1, filename_label)
+
+        for i, widget in enumerate(self.image_list):
+            widget.grid(row=i, column=0, pady=5)
 
     def toggle_camera(self):
         if self.is_running:
