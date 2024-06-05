@@ -18,7 +18,7 @@ class CameraApp:
     def __init__(self, root, image_path):
         self.root = root
         self.root.title("Control with Gestures App")
-        self.root.geometry("1320x750")
+        self.root.geometry("1400x750")
 
         # Load the trained model
         self.model, self.label_map, self.reverse_label_map = self.load_model_and_labels()
